@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -23,6 +24,7 @@ public class BankAccountController {
     BankAccountRepository repository;
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BankAccount> createBankAccount(@RequestBody BankAccount account) {
 
         try {
@@ -35,6 +37,7 @@ public class BankAccountController {
     }
 
     @GetMapping("/get/{account}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<BankAccount> getAccountById(@PathVariable("account") String id) {
 
 
@@ -48,6 +51,7 @@ public class BankAccountController {
     }
 
     @PostMapping("/deposit")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<BankAccount> depositBankAccount(@RequestBody DepositWidrawalObjet account) {
 
         try {
@@ -67,6 +71,7 @@ public class BankAccountController {
     }
 
     @PostMapping("/withdrawal")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<BankAccount> withdrawalBankAccount(@RequestBody DepositWidrawalObjet account) {
 
         try {
