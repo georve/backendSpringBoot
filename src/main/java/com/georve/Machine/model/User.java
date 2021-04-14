@@ -1,7 +1,11 @@
 package com.georve.Machine.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Document(collection = "User")
 public class User {
@@ -11,6 +15,9 @@ public class User {
     private String name;
     private String username;
     private String password;
+
+    @DBRef
+    private Set<Role> roles = new HashSet<>();
 
     public User(String email, String name,String username,String password){
         this.email=email;
@@ -57,5 +64,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 }
