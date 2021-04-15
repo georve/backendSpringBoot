@@ -71,7 +71,7 @@ public class BankAccountController {
 
     @PostMapping("/deposit")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<BankAccount> depositBankAccount(@RequestBody DepositWidrawalObjet account) {
+    public ResponseEntity<BankAccount> depositBankAccount(@Valid @RequestBody DepositWidrawalObjet account) {
 
         logger.info("deposit "+account.getAccountNumber()+" "+account.getEmail());
         try {
