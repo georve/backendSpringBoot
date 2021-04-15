@@ -1,6 +1,7 @@
 package com.georve.Machine.controller;
 
 import com.georve.Machine.exception.NotEnoughMoneyException;
+import com.georve.Machine.exception.ResourceNotFoundException;
 import com.georve.Machine.model.BankAccount;
 import com.georve.Machine.model.DepositWidrawalObjet;
 import com.georve.Machine.repository.BankAccountRepository;
@@ -82,7 +83,7 @@ public class BankAccountController {
               BankAccount updated=  repository.save(_account);
               return new ResponseEntity<>(updated,HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                throw new ResourceNotFoundException("BankAccount not found for email: "+account.getEmail());
             }
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -109,7 +110,7 @@ public class BankAccountController {
                 }
 
             } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                throw new ResourceNotFoundException("BankAccount not found for email: "+account.getEmail());
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
