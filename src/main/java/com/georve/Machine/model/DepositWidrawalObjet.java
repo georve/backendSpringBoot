@@ -1,7 +1,11 @@
 package com.georve.Machine.model;
 
+import javax.validation.constraints.NotBlank;
+
 public class DepositWidrawalObjet {
+    @NotBlank
     private String email;
+    @NotBlank
     private Double value;
     private String accountNumber;
 

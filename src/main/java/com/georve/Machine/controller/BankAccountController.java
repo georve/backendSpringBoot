@@ -4,6 +4,9 @@ import com.georve.Machine.exception.NotEnoughMoneyException;
 import com.georve.Machine.model.BankAccount;
 import com.georve.Machine.model.DepositWidrawalObjet;
 import com.georve.Machine.repository.BankAccountRepository;
+import com.georve.Machine.security.jwt.AuthEntryPointJwt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -12,9 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.Optional;
 
-import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @RestController
 @RequestMapping("/api/bankAccount/")
@@ -23,8 +26,10 @@ public class BankAccountController {
     @Autowired
     BankAccountRepository repository;
 
+    private static final Logger logger = LoggerFactory.getLogger(BankAccountController.class);
+
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<BankAccount> createBankAccount(@RequestBody BankAccount account) {
 
         try {
@@ -50,10 +55,25 @@ public class BankAccountController {
         }
     }
 
+    @GetMapping("/getByEmail/{email}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public ResponseEntity<BankAccount> getAccountByEmail(@PathVariable("email") String email) {
+
+
+        BankAccount accountData = repository.findByEmail(email);
+
+        if (accountData !=null) {
+            return new ResponseEntity<>(accountData, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
     @PostMapping("/deposit")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<BankAccount> depositBankAccount(@RequestBody DepositWidrawalObjet account) {
 
+        logger.info("deposit "+account.getAccountNumber()+" "+account.getEmail());
         try {
             BankAccount _account = repository.findByEmail(account.getEmail());
             if (_account !=null) {
@@ -70,14 +90,16 @@ public class BankAccountController {
 
     }
 
-    @PostMapping("/withdrawal")
+    @PostMapping("withdrawal")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<BankAccount> withdrawalBankAccount(@RequestBody DepositWidrawalObjet account) {
+    public ResponseEntity<BankAccount> withdrawalBankAccount(@Valid @RequestBody DepositWidrawalObjet account) {
 
+        logger.info("withdrawal "+account.getAccountNumber()+" "+account.getEmail());
         try {
             BankAccount _account = repository.findByEmail(account.getEmail());
+            logger.info(_account.getAccount());
             if (_account !=null) {
-                if(_account.getValue().doubleValue()>=account.getValue().doubleValue()){
+                if(_account.getValue()>=account.getValue()){
                     Double newValue=_account.getValue().doubleValue()-account.getValue().doubleValue();
                     _account.setValue(newValue);
                     BankAccount updated=  repository.save(_account);
@@ -90,6 +112,7 @@ public class BankAccountController {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
