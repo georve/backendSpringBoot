@@ -5,19 +5,15 @@ import com.georve.Machine.exception.ResourceNotFoundException;
 import com.georve.Machine.model.BankAccount;
 import com.georve.Machine.model.DepositWidrawalObjet;
 import com.georve.Machine.repository.BankAccountRepository;
-import com.georve.Machine.security.jwt.AuthEntryPointJwt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Optional;
 
 
 @RestController
@@ -47,13 +43,11 @@ public class BankAccountController {
     public ResponseEntity<BankAccount> getAccountById(@PathVariable("account") String id) {
 
 
-        BankAccount accountData = repository.findByAccount(id);
+        BankAccount accountData = repository.findByAccount(id)
+                .orElseThrow(()->new ResourceNotFoundException("Account no found"));
 
-        if (accountData !=null) {
-            return new ResponseEntity<>(accountData, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        return new ResponseEntity<>(accountData, HttpStatus.OK);
+
     }
 
     @GetMapping("/getByEmail/{email}")
@@ -61,13 +55,12 @@ public class BankAccountController {
     public ResponseEntity<BankAccount> getAccountByEmail(@PathVariable("email") String email) {
 
 
-        BankAccount accountData = repository.findByEmail(email);
+        BankAccount accountData = repository.findByEmail(email)
+                .orElseThrow(()->new ResourceNotFoundException("Account no found for email:"+email));
 
-        if (accountData !=null) {
-            return new ResponseEntity<>(accountData, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        return new ResponseEntity<>(accountData, HttpStatus.OK);
+
+
     }
 
     @PostMapping("/deposit")
@@ -75,19 +68,14 @@ public class BankAccountController {
     public ResponseEntity<BankAccount> depositBankAccount(@Valid @RequestBody DepositWidrawalObjet account) {
 
         logger.info("deposit "+account.getAccountNumber()+" "+account.getEmail());
-        try {
-            BankAccount _account = repository.findByEmail(account.getEmail());
-            if (_account !=null) {
-                Double newValue=_account.getValue().doubleValue()+account.getValue().doubleValue();
-                _account.setValue(newValue);
-              BankAccount updated=  repository.save(_account);
-              return new ResponseEntity<>(updated,HttpStatus.OK);
-            } else {
-                throw new ResourceNotFoundException("BankAccount not found for email: "+account.getEmail());
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+
+        BankAccount _account = repository.findByEmail(account.getEmail())
+                .orElseThrow(()->new ResourceNotFoundException("Account no found for email:"+account.getEmail()));
+
+        Double newValue=_account.getValue().doubleValue()+account.getValue().doubleValue();
+        _account.setValue(newValue);
+        BankAccount updated=  repository.save(_account);
+        return new ResponseEntity<>(updated,HttpStatus.OK);
 
     }
 
@@ -96,25 +84,18 @@ public class BankAccountController {
     public ResponseEntity<BankAccount> withdrawalBankAccount(@Valid @RequestBody DepositWidrawalObjet account) {
 
         logger.info("withdrawal "+account.getAccountNumber()+" "+account.getEmail());
-        try {
-            BankAccount _account = repository.findByEmail(account.getEmail());
-            logger.info(_account.getAccount());
-            if (_account !=null) {
-                if(_account.getValue()>=account.getValue()){
-                    Double newValue=_account.getValue().doubleValue()-account.getValue().doubleValue();
-                    _account.setValue(newValue);
-                    BankAccount updated=  repository.save(_account);
-                    return new ResponseEntity<>(updated,HttpStatus.OK);
-                }else{
-                    throw new NotEnoughMoneyException("There is not enough money to complete the transaction");
-                }
 
-            } else {
-                throw new ResourceNotFoundException("BankAccount not found for email: "+account.getEmail());
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        BankAccount _account = repository.findByEmail(account.getEmail())
+                .orElseThrow(()->new ResourceNotFoundException("Account no found for email:"+account.getEmail()));
+        logger.info(_account.getAccount());
+
+        if(_account.getValue()>=account.getValue()){
+            Double newValue=_account.getValue().doubleValue()-account.getValue().doubleValue();
+            _account.setValue(newValue);
+            BankAccount updated=  repository.save(_account);
+            return new ResponseEntity<>(updated,HttpStatus.OK);
+        }else{
+            throw new NotEnoughMoneyException("There is not enough money to complete the transaction");
         }
 
     }
