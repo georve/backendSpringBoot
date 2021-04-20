@@ -4,6 +4,7 @@ import com.georve.Machine.exception.NotEnoughMoneyException;
 import com.georve.Machine.exception.ResourceNotFoundException;
 import com.georve.Machine.model.BankAccount;
 import com.georve.Machine.model.DepositWidrawalObjet;
+import com.georve.Machine.model.EmailPayloadInput;
 import com.georve.Machine.repository.BankAccountRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,12 +51,12 @@ public class BankAccountController {
 
     }
 
-    @GetMapping("/getByEmail/{email}")
+    @PostMapping("/getByEmail")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<BankAccount> getAccountByEmail(@PathVariable("email") String email) {
+    public ResponseEntity<BankAccount> getAccountByEmail(@Valid @RequestBody EmailPayloadInput email) {
 
-
-        BankAccount accountData = repository.findByEmail(email)
+        logger.info("getByEmail: "+ email.getEmail());
+        BankAccount accountData = repository.findByEmail(email.getEmail())
                 .orElseThrow(()->new ResourceNotFoundException("Account no found for email:"+email));
 
         return new ResponseEntity<>(accountData, HttpStatus.OK);
